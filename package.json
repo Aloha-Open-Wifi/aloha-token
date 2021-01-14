@@ -1,0 +1,25 @@
+{
+  "name": "aloha-sale",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test",
+    "flatten-all": "del-cli ./dist && mkdir \\dist && npm run flatten-sale",
+    "flatten-sale": "truffle-flattener contracts/AlohaSale.sol > dist/AlohaSaleFlatten.sol"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.2.0"
+  },
+  "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.6",
+    "chai": "^4.2.0",
+    "del-cli": "^3.0.1",
+    "truffle-flattener": "^1.5.0"
+  }
+}
