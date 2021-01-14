@@ -15,7 +15,6 @@ contract AlohaSale is ReentrancyGuard, Ownable {
 
     // ALOHA per ETH price
     uint256 buyPrice;
-    uint256 priceDecimals;
     uint256 minimalGoal;
     uint256 hardCap;
 
@@ -45,8 +44,7 @@ contract AlohaSale is ReentrancyGuard, Ownable {
     ) public {
         minimalGoal = 400000000000000000000;
         hardCap = 2000000000000000000000;
-        buyPrice = 45;
-        priceDecimals = 15;
+        buyPrice = 50000000000000;
         crowdsaleToken = _token;
     }
 
@@ -102,7 +100,7 @@ contract AlohaSale is ReentrancyGuard, Ownable {
         }
 
         // Token amount per price
-        uint256 tokensSold = (_value).div(buyPrice).mul(10 ** (tokenDecimals - priceDecimals));
+        uint256 tokensSold = (_value).div(buyPrice).mul(10 ** tokenDecimals);
 
 
         // Set how much tokens the user can claim
@@ -188,12 +186,20 @@ contract AlohaSale is ReentrancyGuard, Ownable {
   {
     require(_fundingAddress != address(0));
     require(_endTimestamp > _startTimestamp);
-    require(crowdsaleToken.balanceOf(address(this)) >= hardCap.div(buyPrice).mul(10 ** (tokenDecimals-priceDecimals)), "Not enough tokens transfered for the sale");
+    require(crowdsaleToken.balanceOf(address(this)) >= hardCap.div(buyPrice).mul(10 ** tokenDecimals), "Not enough tokens transfered for the sale");
 
     startTimestamp = _startTimestamp;
     endTimestamp = _endTimestamp;
     fundingAddress = _fundingAddress;
     started = true;
+  }
+
+  function getTime()
+    public
+    view
+    returns(uint256)
+  {
+    return block.timestamp;
   }
 
   function isFailed()
