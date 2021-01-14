@@ -11,6 +11,7 @@ module.exports = {
       version: "0.6.4"
     }
   },
+  plugins: ["solidity-coverage"]
   // Uncommenting the defaults below 
   // provides for an easier quick-start with Ganache.
   // You can also follow this format for other networks;

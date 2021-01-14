@@ -29,15 +29,15 @@ contract AlohaSale is ReentrancyGuard, Ownable {
     uint256 endTimestamp;
     bool started;
     bool stopped;
-    uint256 totalCollected;
+    uint256 public totalCollected;
     uint256 totalSold;
     bool claimEnabled = false;
     uint256 claimWaitTime = 2 days;
 
 
     /**
-    44.444,4444444 for Presale 
-    Buy price: 45000000000000000 wei | 0.045 eth
+    40.000.000 for Presale 
+    Buy price: 50000000000000 wei | 0,00005 eth
     */
     constructor(
         ERC20Burnable _token
