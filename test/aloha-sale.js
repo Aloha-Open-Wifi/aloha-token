@@ -115,9 +115,9 @@ contract('Aloha Sale', function (accounts) {
           'revert'
       );
 
-      // Let's go two day into the future. "Where we're going we don't need... roads!"
+      // Let's go two days into the future. "Where we're going we don't need... roads!"
       await advanceTime(2 * 24 * 60 * 60);
-      
+
       await this.sale.claim({from:accounts[1]});
       assert.equal((await this.sale.getClaimableTokens(accounts[1])).valueOf(), 0, "0 wasn't in the first account");
       assert.equal((await this.erc20.balanceOf(accounts[1])).valueOf(), 100000000000000000000000, "100k wasn't in the first account");
