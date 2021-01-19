@@ -8,8 +8,10 @@
   },
   "scripts": {
     "test": "truffle test",
-    "flatten-all": "del-cli ./dist && mkdir \\dist && npm run flatten-sale",
-    "flatten-sale": "truffle-flattener contracts/AlohaSale.sol > dist/AlohaSaleFlatten.sol"
+    "flatten-all": "del-cli ./dist && mkdir \\dist && npm run flatten-sale && npm run flatten-token && npm run flatten-private-sale",
+    "flatten-sale": "truffle-flattener contracts/AlohaSale.sol > dist/AlohaSaleFlatten.sol",
+    "flatten-private-sale": "truffle-flattener contracts/AlohaPrivateSale.sol > dist/AlohaPrivateSaleFlatten.sol",
+    "flatten-token": "truffle-flattener contracts/Aloha.sol > dist/AlohaFlatten.sol"
   },
   "author": "",
   "license": "ISC",

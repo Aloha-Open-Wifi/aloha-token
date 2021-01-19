@@ -3,15 +3,14 @@ pragma solidity 0.6.4;
 import "../node_modules/@openzeppelin/contracts/math/SafeMath.sol";
 import '../node_modules/@openzeppelin/contracts/utils/ReentrancyGuard.sol';
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
-import "../node_modules/@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../node_modules/@openzeppelin/contracts/utils/Address.sol";
 
-contract AlohaSale is ReentrancyGuard, Ownable {
+contract AlohaPrivateSale is ReentrancyGuard, Ownable {
 
     using SafeMath for uint256;
     using Address for address payable;
 
-    // Participants for posible refunds
     mapping(address => uint256) participants;
 
     mapping(address => uint256) public claimableTokens;
@@ -21,34 +20,34 @@ contract AlohaSale is ReentrancyGuard, Ownable {
     uint256 minimalGoal;
     uint256 hardCap;
 
-    ERC20Burnable crowdsaleToken;
+    IERC20 crowdsaleToken;
 
     uint256 tokenDecimals = 18;
 
     event SellToken(address recepient, uint tokensSold, uint value);
 
     address payable fundingAddress;
-    uint256 startTimestamp;
-    uint256 endTimestamp;
-    bool started;
-    bool stopped;
     uint256 public totalCollected;
     uint256 totalSold;
     bool claimEnabled = false;
-    uint256 claimWaitTime = 2 days;
+    uint256 claimWaitTime = 60 days;
+    uint256 start;
 
 
     /**
-    32.000.000 for Presale 
-    Buy price: 50000000000000 wei | 0,00005 eth
+    10.000.000 for Presale 
+    Buy price: 40000000000000 wei | 0,00004 eth
     */
     constructor(
-        ERC20Burnable _token
+        IERC20 _token,
+        address payable _fundingAddress
     ) public {
-        minimalGoal = 400000000000000000000;
-        hardCap = 1600000000000000000000;
-        buyPrice = 50000000000000;
+        minimalGoal = 300000000000000000000;
+        hardCap = 400000000000000000000;
+        buyPrice = 40000000000000;
         crowdsaleToken = _token;
+        fundingAddress = _fundingAddress;
+        start = getTime();
     }
 
     function getToken()
@@ -75,8 +74,6 @@ contract AlohaSale is ReentrancyGuard, Ownable {
     // For users to claim their tokens after a successful tge
     function claim() external 
       nonReentrant 
-      hasntStopped()
-      whenCrowdsaleSuccessful()
     returns (uint256) {
         require(canClaim(), "Claim is not yet possible");
         uint256 amount = claimableTokens[msg.sender];
@@ -86,13 +83,11 @@ contract AlohaSale is ReentrancyGuard, Ownable {
     }
 
     function canClaim() public view returns (bool) {
-      return claimEnabled || block.timestamp > (endTimestamp + claimWaitTime);
+      return claimEnabled || block.timestamp > (start + claimWaitTime);
     }
 
     function sell(address payable _recepient, uint256 _value) internal
         nonReentrant
-        hasBeenStarted()
-        hasntStopped()
         whenCrowdsaleAlive()
     {
         uint256 newTotalCollected = totalCollected.add(_value);
@@ -115,8 +110,10 @@ contract AlohaSale is ReentrancyGuard, Ownable {
 
         emit SellToken(_recepient, tokensSold, _value);
 
-        // Save participants in case of a refund
+        // Save participants
         participants[_recepient] = participants[_recepient].add(_value);
+
+        fundingAddress.sendValue(_value);
 
         // Update total ETH
         totalCollected = totalCollected.add(_value);
@@ -125,80 +122,23 @@ contract AlohaSale is ReentrancyGuard, Ownable {
         totalSold = totalSold.add(tokensSold);
     }
 
-    function enableClaim(
-    )
-    external
-    onlyOwner()
-    {
-        claimEnabled = true;
-    }
-
-    // Called to withdraw the ETH only if the TGE was successful
-    function withdraw(
-        uint256 _amount
-    )
-    external
-    nonReentrant
-    onlyOwner()
-    hasntStopped()
-    whenCrowdsaleSuccessful()
-    {
-        require(_amount <= address(this).balance, "Not enough funds");
-        fundingAddress.sendValue(_amount);
-    }
-
-    function burnUnsold()
-    external
-    nonReentrant
-    onlyOwner()
-    hasntStopped()
-    whenCrowdsaleSuccessful()
-    {
-        crowdsaleToken.burn(crowdsaleToken.balanceOf(address(this)));
-    }
-
-    // Called to refund user's ETH if the TGE has failed
-    function refund()
-    external
-    nonReentrant
-    {
-        require(stopped || isFailed(), "Not cancelled or failed");
-        uint256 amount = participants[msg.sender];
-
-        require(amount > 0, "Only once");
-        participants[msg.sender] = 0;
-
-        msg.sender.sendValue(amount);
-    }
-
-  // Cancels the TGE
-  function stop() public onlyOwner() hasntStopped()  {
-    if (started) {
-      require(!isFailed());
-      require(!isSuccessful());
-    }
-    stopped = true;
+  function totalTokensNeeded() external view returns (uint256) {
+    return hardCap.div(buyPrice).mul(10 ** tokenDecimals);
   }
 
-  // Called to setup start and end time of TGE as well as funding address
-  function start(
-    uint256 _startTimestamp,
-    uint256 _endTimestamp,
-    address payable _fundingAddress
-  )
-    public
+  function enableClaim()
+    external
     onlyOwner()
-    hasntStarted()
-    hasntStopped()
   {
-    require(_fundingAddress != address(0));
-    require(_endTimestamp > _startTimestamp);
-    require(crowdsaleToken.balanceOf(address(this)) >= hardCap.div(buyPrice).mul(10 ** tokenDecimals), "Not enough tokens transfered for the sale");
+        claimEnabled = true;
+  }
 
-    startTimestamp = _startTimestamp;
-    endTimestamp = _endTimestamp;
-    fundingAddress = _fundingAddress;
-    started = true;
+  function returnUnsold()
+    external
+    nonReentrant
+    onlyOwner()
+  {
+    crowdsaleToken.transfer(fundingAddress, crowdsaleToken.balanceOf(address(this)));
   }
 
   function getTime()
@@ -209,28 +149,13 @@ contract AlohaSale is ReentrancyGuard, Ownable {
     return block.timestamp;
   }
 
-  function isFailed()
-    public
-    view
-    returns(bool)
-  {
-    return (
-      started &&
-      block.timestamp >= endTimestamp &&
-      totalCollected < minimalGoal
-    );
-  }
-
   function isActive()
     public
     view
     returns(bool)
   {
     return (
-      started &&
-      totalCollected < hardCap &&
-      block.timestamp >= startTimestamp &&
-      block.timestamp < endTimestamp
+      totalCollected < hardCap
     );
   }
 
@@ -240,8 +165,7 @@ contract AlohaSale is ReentrancyGuard, Ownable {
     returns(bool)
   {
     return (
-      totalCollected >= hardCap ||
-      (block.timestamp >= endTimestamp && totalCollected >= minimalGoal)
+      totalCollected >= hardCap || totalCollected >= minimalGoal
     );
   }
 
@@ -250,23 +174,4 @@ contract AlohaSale is ReentrancyGuard, Ownable {
     _;
   }
 
-  modifier whenCrowdsaleSuccessful() {
-    require(isSuccessful());
-    _;
-  }
-
-  modifier hasntStopped() {
-    require(!stopped);
-    _;
-  }
-
-  modifier hasntStarted() {
-    require(!started);
-    _;
-  }
-
-  modifier hasBeenStarted() {
-    require(started);
-    _;
-  }
 }
