@@ -39,14 +39,14 @@ contract AlohaSale is ReentrancyGuard, Ownable {
 
 
     /**
-    32.000.000 for Presale 
+    19,980,000 for Presale 
     Buy price: 50000000000000 wei | 0,00005 eth
     */
     constructor(
         ERC20Burnable _token
     ) public {
-        minimalGoal = 400000000000000000000;
-        hardCap = 1600000000000000000000;
+        minimalGoal = 333000000000000000000;
+        hardCap = 999000000000000000000;
         buyPrice = 50000000000000;
         crowdsaleToken = _token;
     }
@@ -69,6 +69,7 @@ contract AlohaSale is ReentrancyGuard, Ownable {
 
     receive() external payable {
         require(msg.value >= 100000000000000000, "Min 0.1 eth");
+        require(msg.value <= 10000000000000000000, "Max 10 eth");
         sell(msg.sender, msg.value);
     }
 
@@ -105,23 +106,13 @@ contract AlohaSale is ReentrancyGuard, Ownable {
             _value = diff;
             newTotalCollected = totalCollected.add(_value);
         }
-
-        // Token amount per price
         uint256 tokensSold = (_value).div(buyPrice).mul(10 ** tokenDecimals);
-
-
-        // Set how much tokens the user can claim
         claimableTokens[_recepient] = claimableTokens[_recepient].add(tokensSold);
 
         emit SellToken(_recepient, tokensSold, _value);
 
-        // Save participants in case of a refund
         participants[_recepient] = participants[_recepient].add(_value);
-
-        // Update total ETH
         totalCollected = totalCollected.add(_value);
-
-        // Update tokens sold
         totalSold = totalSold.add(tokensSold);
     }
 
@@ -133,7 +124,7 @@ contract AlohaSale is ReentrancyGuard, Ownable {
         claimEnabled = true;
     }
 
-    // Called to withdraw the ETH only if the TGE was successful
+    // Called to withdraw the eth on a succesful sale
     function withdraw(
         uint256 _amount
     )
@@ -157,7 +148,7 @@ contract AlohaSale is ReentrancyGuard, Ownable {
         crowdsaleToken.burn(crowdsaleToken.balanceOf(address(this)));
     }
 
-    // Called to refund user's ETH if the TGE has failed
+    // Is sale fails, users will be able to get their ETH back
     function refund()
     external
     nonReentrant
@@ -171,7 +162,7 @@ contract AlohaSale is ReentrancyGuard, Ownable {
         msg.sender.sendValue(amount);
     }
 
-  // Cancels the TGE
+  // Cancels the presale
   function stop() public onlyOwner() hasntStopped()  {
     if (started) {
       require(!isFailed());
@@ -180,7 +171,6 @@ contract AlohaSale is ReentrancyGuard, Ownable {
     stopped = true;
   }
 
-  // Called to setup start and end time of TGE as well as funding address
   function start(
     uint256 _startTimestamp,
     uint256 _endTimestamp,
@@ -199,6 +189,10 @@ contract AlohaSale is ReentrancyGuard, Ownable {
     endTimestamp = _endTimestamp;
     fundingAddress = _fundingAddress;
     started = true;
+  }
+
+  function totalTokensNeeded() external view returns (uint256) {
+    return hardCap.div(buyPrice).mul(10 ** tokenDecimals);
   }
 
   function getTime()

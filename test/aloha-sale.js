@@ -85,7 +85,7 @@ contract('Aloha Sale', function (accounts) {
       // const gasUsed = txnReceipt.receipt.gasUsed;
       const tx = await web3.eth.getTransaction(txnReceipt.tx);
       // const gasPrice = tx.gasPrice;
-      assert.equal((await web3.eth.getBalance(accounts[1])).valueOf(), 99996436360000000000, "Incorrect balance");
+      assert.equal((await web3.eth.getBalance(accounts[1])).valueOf(), '99996435860000000000', "Incorrect balance");
 
     });
   });
@@ -184,6 +184,12 @@ contract('Aloha Sale', function (accounts) {
       await expectRevert(
         this.sale.sendTransaction({from:accounts[1], value:90000000000000000}),
           'Min 0.1 eth'
+      );
+    });
+    it('should fail if value is more than 10 eth', async function () {
+      await expectRevert(
+        this.sale.sendTransaction({from:accounts[1], value:10100000000000000000}),
+          'Max 10 eth'
       );
     });
   });
