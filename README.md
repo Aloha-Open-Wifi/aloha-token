@@ -1,4 +1,4 @@
-# Alohsa Contracts
+# Aloha Contracts
 
 
 ## Instructions
