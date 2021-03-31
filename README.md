@@ -1,7 +1,8 @@
-# Alohsa Sale Contracts
+# Alohsa Contracts
 
 
 ## Instructions
+* Deploy AlohaToken
 * Deploy the AlohaSale contract.
 * Tranfer the sale tokens to the AlohaSale.
 * Call AlohaSale.start with the sale params.
